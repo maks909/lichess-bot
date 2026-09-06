@@ -8,5 +8,6 @@ lichess_bot_auto_logs/*
 *.pgn
 *.log
 *.txt
+.venv
 TEMP/*
-config.yml.default
+config.yml
