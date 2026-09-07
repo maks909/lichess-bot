@@ -94,3 +94,47 @@ class ComboEngine(ExampleEngine):
             possible_moves.sort(key=str)
             move = possible_moves[0]
         return PlayResult(move, None, draw_offered=draw_offered)
+
+class MainEngine(ExampleEngine):
+    
+    depth = 4
+    def search(self, board: chess.Board, *args: HOMEMADE_ARGS_TYPE) -> PlayResult:
+        board = board
+        my_side = board.turn
+        original_move_list = list(board.legal_moves)
+        original_moves = {}
+        for omove in original_move_list:
+            board.push(omove)
+            evalu = self.eval(board, my_side)
+            if evalu in original_moves.keys():
+                original_moves[evalu].append(omove)
+            else:
+                original_moves[evalu] = [omove]
+            board.pop()
+
+        return PlayResult(random.choice(original_moves[max(original_moves.keys())]), None)
+
+
+
+    def eval(self, board: chess.Board, my_side: bool) -> int:
+        score = 0
+
+        score += len(board.pieces(chess.PAWN, chess.WHITE)) * 1
+        score += len(board.pieces(chess.KNIGHT, chess.WHITE)) * 3
+        score += len(board.pieces(chess.BISHOP, chess.WHITE)) * 3
+        score += len(board.pieces(chess.ROOK, chess.WHITE)) * 5
+        score += len(board.pieces(chess.QUEEN, chess.WHITE)) * 9
+        
+        # Black pieces (subtracted)
+        score -= len(board.pieces(chess.PAWN, chess.BLACK)) * 1
+        score -= len(board.pieces(chess.KNIGHT, chess.BLACK)) * 3
+        score -= len(board.pieces(chess.BISHOP, chess.BLACK)) * 3
+        score -= len(board.pieces(chess.ROOK, chess.BLACK)) * 5
+        score -= len(board.pieces(chess.QUEEN, chess.BLACK)) * 9
+
+        if board.is_checkmate():
+            score += 1000
+
+        if my_side:
+            return score
+        return -score
