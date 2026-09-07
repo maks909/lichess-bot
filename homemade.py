@@ -10,6 +10,8 @@ from lib.engine_wrapper import MinimalEngine
 from lib.lichess_types import MOVE, HOMEMADE_ARGS_TYPE
 import logging
 
+from copy import deepcopy as copy
+
 
 # Use this logger variable to print messages to the console or log files.
 # logger.info("message") will always print "message" to the console or log file.
@@ -105,7 +107,7 @@ class MainEngine(ExampleEngine):
         original_moves = {}
         for omove in original_move_list:
             board.push(omove)
-            evalu = self.eval(board, my_side)
+            evalu = self.recursive_search(board, 2)
             if evalu in original_moves.keys():
                 original_moves[evalu].append(omove)
             else:
@@ -114,7 +116,24 @@ class MainEngine(ExampleEngine):
 
         return PlayResult(random.choice(original_moves[max(original_moves.keys())]), None)
 
+    def recursive_search(self, board, depth):
+        move_list = list(board.legal_moves)
+        moves = {}
 
+        score = -99999
+
+        for move in move_list:
+            board.push(move)
+            if depth > 0:    
+                evalu = -self.recursive_search(board, depth-1)
+            else:
+                evalu = self.eval(board, board.turn)
+            
+            score = max(score, evalu)
+
+            board.pop()
+
+        return score
 
     def eval(self, board: chess.Board, my_side: bool) -> int:
         score = 0
@@ -133,7 +152,9 @@ class MainEngine(ExampleEngine):
         score -= len(board.pieces(chess.QUEEN, chess.BLACK)) * 9
 
         if board.is_checkmate():
-            score += 1000
+            score -= 10000
+        elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material():
+            score = 0
 
         if my_side:
             return score
